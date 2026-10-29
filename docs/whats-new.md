@@ -1,5 +1,13 @@
 # What's new in LightCraft
 
+## 2026-10-29
+
+### Confirm before permanently removing photos from the library
+- Delete Permanently in Recently Deleted now asks first, from the Photo menu and the grid and filmstrip right-click menus.
+  The question names how many photos will leave the library. Cancel has the initial focus; Esc cancels and Return
+  activates the focused button.
+  This question always appears, even when confirmation before moving photos to Recently Deleted is switched off.
+
 ## 2026-10-24
 
 ### Relative-date filters and smart albums follow the clock

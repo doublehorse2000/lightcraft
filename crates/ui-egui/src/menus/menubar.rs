@@ -12,7 +12,7 @@ use serde_json::{Value, json};
 
 use crate::LightcraftApp;
 use crate::menus::MenuEntry;
-use crate::state::{RightPanel, ViewMode};
+use crate::state::{Dialog, RightPanel, ViewMode};
 
 #[derive(Clone, Debug, PartialEq, Serialize)]
 #[serde(tag = "kind", rename_all = "camelCase")]
@@ -933,6 +933,15 @@ pub fn run_item(app: &mut LightcraftApp, id: &str, params: Value) -> Result<Valu
     }
     if id == "photo.delete" && crate::menus::confirm_delete(app) {
         return Ok(Value::Null);
+    }
+    if id == "photo.deletePermanently" {
+        let mut ids: Vec<u64> = app.session.targets(&params).map_err(|e| e.to_string())?.into_iter().map(|id| id.0).collect();
+        ids.sort_unstable();
+        ids.dedup();
+        if !ids.is_empty() {
+            app.ui.dialog = Some(Dialog::ConfirmDeletePermanently { ids, library: app.session.library_generation() });
+            return Ok(Value::Null);
+        }
     }
     let was = app.session.active();
     let r = app.run(id, params);

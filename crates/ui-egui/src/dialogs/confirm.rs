@@ -206,6 +206,12 @@ pub fn confirm_dialog(app: &mut LightcraftApp, dlg: &Dialog) -> Result<serde_jso
         Dialog::Merge { opts } => crate::merge::start_final(app, opts),
         Dialog::Import { opts } => crate::import::start(app, opts),
         Dialog::ConfirmDelete { .. } => app.run("photo.delete", json!({})),
+        Dialog::ConfirmDeletePermanently { ids, library } => {
+            if *library != app.session.library_generation() {
+                return Err(crate::i18n::tr("Another library was opened: no photos were deleted.").to_string());
+            }
+            app.run("photo.deletePermanently", json!({"ids": ids}))
+        }
         Dialog::MovePhotos { ids, folder, dont_ask, library, .. } => {
             // another library opened meanwhile (from the menu bar, an agent): these numbers are
             // other photos there

@@ -269,6 +269,7 @@ fn dialog_title(app: &LightcraftApp, dlg: &Dialog) -> String {
         Dialog::Merge { opts } => opts.title(),
         Dialog::Settings { .. } => "Settings",
         Dialog::ConfirmDelete { .. } => "Delete Photos",
+        Dialog::ConfirmDeletePermanently { .. } => "Delete Permanently",
         Dialog::MovePhotos { .. } => "Move Photos",
         Dialog::LightroomCatalog { .. } => "Lightroom Classic Catalog",
         Dialog::LightroomDestination { .. } => "Import Lightroom Catalog",
@@ -345,6 +346,7 @@ fn ok_label(app: &LightcraftApp, dlg: &Dialog, informational: bool, sam: &SamSta
         Dialog::FaceModel { info, .. } if !informational && info["download"].is_string() => "Download",
         Dialog::FaceModel { .. } if !informational => "Install",
         Dialog::ConfirmDelete { .. } | Dialog::DeleteKeyword { .. } | Dialog::DeleteEffects { .. } => "Delete",
+        Dialog::ConfirmDeletePermanently { .. } => "Delete Permanently",
         Dialog::SaveEffect { .. } => "Create",
         Dialog::MovePhotos { .. } => "Move",
         // (not "Merge": that is photo merging, HDR / panorama, in some languages)
@@ -424,8 +426,14 @@ fn button_row(app: &LightcraftApp, ui: &mut egui::Ui, dlg: &Dialog, close: &mut 
         buttons_w += ok_button.desired_size(ui).x;
     }
     ui.add_space((ui.available_width() - buttons_w).max(0.0));
-    if !informational && cancel_button.show(ui).clicked() {
-        *close = true;
+    if !informational {
+        let cancel = cancel_button.show(ui);
+        if ui.is_enabled() && matches!(dlg, Dialog::ConfirmDeletePermanently { .. }) && just_opened(ui, "confirm-delete-permanently") {
+            cancel.request_focus();
+        }
+        if cancel.clicked() {
+            *close = true;
+        }
     }
     let r = (!ok.is_empty()).then(|| ok_button.show(ui));
     if r.is_some_and(|r| r.clicked()) {
@@ -483,7 +491,7 @@ fn confirmed(app: &mut LightcraftApp, ctx: &egui::Context, dlg: &mut Dialog) -> 
             }
             closed = true;
         }
-        Err(e) if matches!(dlg, Dialog::MovePhotos { .. }) => {
+        Err(e) if matches!(dlg, Dialog::MovePhotos { .. } | Dialog::ConfirmDeletePermanently { .. }) => {
             app.toast(ctx, e);
             closed = true;
         }
@@ -1832,6 +1840,14 @@ fn dialog_content(app: &mut LightcraftApp, ui: &mut egui::Ui, t: &Tokens, body_m
                 if *count == 1 { crate::i18n::tr("this photo").to_string() } else { crate::i18n::tr_format!("these {count} photos", count = count) };
             ui.label(crate::i18n::tr_format!("Move {what} to Recently Deleted?", what = what));
             ui.label(egui::RichText::new(crate::i18n::tr("They can be restored from Recently Deleted until it is emptied.")).color(t.text_dim));
+        }
+        Dialog::ConfirmDeletePermanently { ids, .. } => {
+            let what = if ids.len() == 1 {
+                crate::i18n::tr("this photo").to_string()
+            } else {
+                crate::i18n::tr_format!("these {count} photos", count = ids.len())
+            };
+            ui.label(crate::i18n::tr_format!("Permanently delete {what} from the library?", what = what));
         }
         Dialog::MovePhotos { .. } => move_photos_body(ui, t, dlg),
         d @ Dialog::SynchronizeFolder { .. } => crate::sync::body(app, ui, d),

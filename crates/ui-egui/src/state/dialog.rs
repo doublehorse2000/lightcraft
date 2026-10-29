@@ -302,6 +302,11 @@ pub enum Dialog {
     ConfirmDelete {
         count: usize,
     },
+    /// Confirm removing these records from this library; selection changes must not retarget it.
+    ConfirmDeletePermanently {
+        ids: Vec<u64>,
+        library: u64,
+    },
     /// Confirm moving photos dropped on a Folders row into that folder on disk
     /// (`photo.moveToFolder`). `name`: the folder's name, as the question says it.
     MovePhotos {
